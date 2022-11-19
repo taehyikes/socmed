@@ -1,0 +1,160 @@
+---
+title: "Retrieving and organising the tweets"
+format: html
+editor: visual
+---
+
+# 0. Set up
+
+These are the R libraries we need
+
+```{r, message = FALSE}
+library(tidyverse) # main functions
+library(rtweet) # access Twitter API
+library(readr) # reading in files
+library(janitor) # cleans up datasets
+```
+
+# 1. List tweets
+
+Getting the link to the first and last Tweets in each thread allows for the whole thread to be found.
+
+This list was created by hand. The Google Sheet used has 7 columns:
+
+-   Title (based on the master list on Twitter)
+
+-   Short Link (this came from a quick API pull, but they aren't the links we need to actually pull the fics)
+
+-   Short ID (used for naming folders and paths, should be short-ish and have no spaces or unusual characters)
+
+-   FIRST (the link to the first tweet in the thread, it should be formatted like this: <https://twitter.com/taehyikes/status/1479132323547332611> as the numbers at the end are important)
+
+-   LAST (like above but the last tweet to be included in the thread)
+
+-   Added by (optional, just to track who contributed)
+
+```{r, message = F}
+thread_list_raw <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vT7N5QJlcEY09a_5onomH6ZW38Nb_vb9pGBjEghJFXSnPzRjF2Dz1qx7l4iSFcPTFcCA0VWAyF36xlk/pub?gid=0&single=true&output=csv")
+
+```
+
+# 2. Retrieve Tweets
+
+Which ones have already been done? Which are left to do?
+
+```{r}
+# Checks which files already have an .RDS file created
+completed <- tibble(short_id = list.files(pattern = ".rds")) |> 
+  mutate(short_id = str_remove(short_id, ".rds"))
+
+to_do <- thread_list_raw |> 
+  clean_names() |> 
+  filter(!is.na(short_id)) |> 
+  filter(!(short_id %in% completed$short_id))
+  
+```
+
+## Access the API
+
+A Twitter Developer account is needed to do this
+
+```{r, eval = FALSE}
+# Authentication for rtweet not shown as keys are private
+# Anyone re-running or replicating this can learn more here
+vignette("auth", package = "rtweet")
+
+```
+
+```{r, message=F}
+author <- "taehyikes"
+
+for(i in 1:nrow(to_do)){
+  
+  # Name to use for the paths
+  short_id = to_do$short_id[i]
+  
+  # Created folder
+  if(!dir.exists(short_id)) dir.create(short_id)
+  
+  # Use first and last tweet IDs to get all other IDs for the thread
+  
+  first = str_remove(to_do$first[i], 
+                     str_c("https://twitter.com/", 
+                     author, "/status/"))
+  last = str_remove(to_do$last[i], 
+                     str_c("https://twitter.com/", 
+                     author, "/status/"))
+
+  ids = last
+
+  # This will break if a thread is somehow longer than 10,000 tweets
+  for(i in 1:10000){
+    lookup = lookup_tweets(ids[i])
+    ids[i+1] = lookup$in_reply_to_status_id_str
+  
+  if(first == 
+     lookup$in_reply_to_status_id_str){break}
+  }
+  
+  my_seq <- 1:ceiling(length(ids)/100)
+  
+  get_urls <- function(x){
+    lookup_tweets(ids[(x*100-99):(x*100)], 
+                       parse = F
+                       )[[1]]$extended_entities$media
+  }
+  
+  image_urls <- tibble(x = my_seq) |> 
+    map(~get_urls(.)) |> 
+    bind_rows()
+  
+  # Row per image
+  extract_images <- image_urls |> 
+    select(expanded_url, media_url_https) |> 
+    mutate(id_str = str_extract(expanded_url, "(?<=status/)(.*)(?=/photo)")) |> 
+    select(id_str, media_url_https)
+  
+  
+  # For text
+  get_text <- function(x){
+    lookup_tweets(ids[(x*100-99):(x*100)])
+  }
+  
+  full_text <- tibble(x = my_seq) |> 
+    map(~get_text(.)) |> 
+    bind_rows() |> 
+    select(created_at, id_str, in_reply_to_status_id_str, full_text) |> 
+    filter(id_str %in% ids) |> 
+    arrange(created_at) |> 
+    mutate(post_id = row_number()) |> 
+    full_join(extract_images, by = "id_str") |> 
+    group_by(created_at) %>% 
+    mutate(photo_id = row_number()) |>
+    mutate(ids_n = length(ids),
+           short_id = short_id) |>
+    mutate(title = case_when(
+      length(ids_n) < 10 ~ str_c(short_id, sprintf("/%01d—%01d.jpg", post_id, photo_id)),
+      length(ids_n) < 100 ~ str_c(short_id, sprintf("/%02d—%01d.jpg", post_id, photo_id)),
+      length(ids_n) < 1000 ~ str_c(short_id, sprintf("/%03d—%01d.jpg", post_id, photo_id)),
+      TRUE ~ str_c(short_id, sprintf("/%04d—%01d.jpg", post_id, photo_id))
+      ))
+  
+  ## Note to self: EDIT HERE
+  saveRDS(full_text, str_c(short_id, ".rds"))
+  
+  safe_download <- safely(~ download.file(.x , .y, mode = "wb"))
+  
+  map2(full_text$media_url_https, full_text$title, safe_download)
+}
+
+```
+
+# 3. Push to GitHub
+
+Can be done in the terminal
+
+```{bash}
+git add -A
+git commit -m "Latest update"
+git push
+```
