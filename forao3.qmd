@@ -10,7 +10,7 @@ Last run: `r Sys.time()`
 
 Choose the story you want the code for based on the short id shown. It won't look like much because it is WIIIIIDE but highlight what is there and paste into AO3 HTML editor. You'll see all the content then.
 
-```{r, echo = F, message = F}
+```{r, echo = F, message = F, warning = F}
 library(tidyverse) # main functions
 library(readr) # reading in files
 library(janitor) # cleans up datasets
@@ -22,17 +22,19 @@ write_html <- function(short_id, website = "https://taehyikes.github.io/socmed/"
   data = readRDS(str_c(short_id, ".rds")) |>
     # dash behave weirdly,  must replace
     mutate(title = str_replace(title, "—", "%E2%80%94")) |> 
-         mutate(github_url = paste0(website, short_id, title))
+         mutate(github_url = paste0(website, short_id, title)) |> 
+    separate(full_text, into = c("full_text", "link"), 
+             sep = " https", fill = "right")
   
   
 for(i in 1:nrow(data)){
     if(data$photo_id[i] == 1 & !is.na(data$media_url_https[i])){
-      cat(paste0("<p>", data$full_text[i], "</p><p> <img src=\"", data$github_url[i], "\" width = \"100%\" align = \"center\"/> </p>"))
+      cat(paste0("<p>", data$full_text[i], "</p><p> <img src=\"", data$github_url[i], "\" align = \"center\" width = \"90%\" /> </p>"))
     } else if(is.na(data$media_url_https[i])){
       cat(paste0("<p>", data$full_text[i], "</p>"))
     }
      else {
-      cat(paste0("<p> <img src=\"", data$github_url[i], "\" width = \"100%\" align = \"center\"/> </p>"))
+      cat(paste0("<p> <img src=\"", data$github_url[i], "\" align = \"center\" width = \"90%\" /> </p>"))
     }
   }
 }
