@@ -6,9 +6,11 @@ format:
 editor: visual
 ---
 
-Last run: `r Sys.time()`
+*Last run:* `r Sys.time()` (New Zealand time)
 
-Choose the story you want the code for based on the short id shown. It won't look like much because it is WIIIIIDE but highlight what is there and paste into AO3 HTML editor. You'll see all the content then.
+# Instructions
+
+Choose the story you want the code for based on the title and short id shown. It won't look like much because it is WIIIIIDE but highlight the fixed width font part (the bit that looks 'codey') by dragging down (not across or you'll be scrolling for ages). Copy that and then paste it into the AO3 HTML editor. You'll see all the content then.
 
 ```{r, echo = F, message = F, warning = F}
 library(tidyverse) # main functions
@@ -46,7 +48,6 @@ to_show <- thread_list_clean |>
   filter(short_id %in% completed$short_id)
 
 ```
-
 
 ```{r, echo = FALSE, results = 'asis'}
 for(au in 1:nrow(to_show)){
