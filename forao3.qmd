@@ -1,0 +1,52 @@
+---
+title: "Setting up code for AO3"
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+Last run: `r Sys.time()`
+
+Choose the story you want the code for based on the short id shown. It won't look like much because it is WIIIIIDE but highlight what is there and paste into AO3 HTML editor. You'll see all the content then.
+
+```{r, echo = F, message = F}
+library(tidyverse) # main functions
+library(readr) # reading in files
+
+write_html <- function(short_id, website = "https://taehyikes.github.io/socmed/"){
+  data = readRDS(str_c(short_id, ".rds")) |>
+    # dash behave weirdly,  must replace
+    mutate(title = str_replace(title, "—", "%E2%80%94")) |> 
+         mutate(github_url = paste0(website, short_id, title))
+  
+  
+for(i in 1:nrow(data)){
+    if(data$photo_id[i] == 1 & !is.na(data$media_url_https[i])){
+      cat(paste0("<p>", data$full_text[i], "</p><p> <img src=\"", data$github_url[i], "\" width = \"100%\" align = \"center\"/> </p>"))
+    } else if(is.na(data$media_url_https[i])){
+      cat(paste0("<p>", data$full_text[i], "</p>"))
+    }
+     else {
+      cat(paste0("<p> <img src=\"", data$github_url[i], "\" width = \"100%\" align = \"center\"/> </p>"))
+    }
+  }
+}
+
+completed <- tibble(short_id = list.files(pattern = ".rds")) |> 
+  mutate(short_id = str_remove(short_id, ".rds"))
+
+```
+
+
+```{r, echo = FALSE, results = 'asis'}
+for(au in 1:nrow(completed)){
+  cat(paste0("# ", completed$short_id[au]))
+  cat("\n\n\n```
+      ")
+  print(write_html(completed$short_id[au]))
+  cat("```")
+  cat("\n\n\n")
+}
+
+```

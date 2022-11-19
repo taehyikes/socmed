@@ -92,8 +92,7 @@ for(i in 1:nrow(to_do)){
     lookup = lookup_tweets(ids[i])
     ids[i+1] = lookup$in_reply_to_status_id_str
   
-  if(first == 
-     lookup$in_reply_to_status_id_str){break}
+  if(first == lookup$in_reply_to_status_id_str) break
   }
   
   my_seq <- 1:ceiling(length(ids)/100)
@@ -133,18 +132,19 @@ for(i in 1:nrow(to_do)){
     mutate(ids_n = length(ids),
            short_id = short_id) |>
     mutate(title = case_when(
-      length(ids_n) < 10 ~ str_c(short_id, sprintf("/%01d—%01d.jpg", post_id, photo_id)),
-      length(ids_n) < 100 ~ str_c(short_id, sprintf("/%02d—%01d.jpg", post_id, photo_id)),
-      length(ids_n) < 1000 ~ str_c(short_id, sprintf("/%03d—%01d.jpg", post_id, photo_id)),
-      TRUE ~ str_c(short_id, sprintf("/%04d—%01d.jpg", post_id, photo_id))
-      ))
+      ids_n < 10 ~ sprintf("/%01d—%01d.jpg", post_id, photo_id),
+      ids_n < 100 ~ sprintf("/%02d—%01d.jpg", post_id, photo_id),
+      ids_n < 1000 ~ sprintf("/%03d—%01d.jpg", post_id, photo_id),
+      TRUE ~ sprintf("/%04d—%01d.jpg", post_id, photo_id)
+      )) |> 
+    mutate(path = str_c(short_id, title))
   
   ## Note to self: EDIT HERE
   saveRDS(full_text, str_c(short_id, ".rds"))
   
   safe_download <- safely(~ download.file(.x , .y, mode = "wb"))
   
-  map2(full_text$media_url_https, full_text$title, safe_download)
+  map2(full_text$media_url_https, full_text$path, safe_download)
 }
 
 ```
