@@ -25,7 +25,7 @@ write_html <- function(short_id, website = "https://taehyikes.github.io/socmed/"
     # dash behave weirdly,  must replace
     mutate(title = str_replace(title, "—", "%E2%80%94")) |> 
          mutate(github_url = paste0(website, short_id, title)) |> 
-    separate(full_text, into = c("full_text", "link"), 
+    separate(full_text, into = c("full_text", "link", "extra"), 
              sep = " https", fill = "right")
   
   

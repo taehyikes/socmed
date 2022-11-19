@@ -168,6 +168,6 @@ Can be done in the terminal
 
 ```{bash}
 git add -A
-git commit -m "Fixing first-au"
+git commit -m "First batch of Anne"
 git push
 ```
