@@ -13,6 +13,10 @@ Choose the story you want the code for based on the short id shown. It won't loo
 ```{r, echo = F, message = F}
 library(tidyverse) # main functions
 library(readr) # reading in files
+library(janitor) # cleans up datasets
+
+thread_list_clean <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vT7N5QJlcEY09a_5onomH6ZW38Nb_vb9pGBjEghJFXSnPzRjF2Dz1qx7l4iSFcPTFcCA0VWAyF36xlk/pub?gid=0&single=true&output=csv") |> 
+  clean_names()
 
 write_html <- function(short_id, website = "https://taehyikes.github.io/socmed/"){
   data = readRDS(str_c(short_id, ".rds")) |>
@@ -36,15 +40,18 @@ for(i in 1:nrow(data)){
 completed <- tibble(short_id = list.files(pattern = ".rds")) |> 
   mutate(short_id = str_remove(short_id, ".rds"))
 
+to_show <- thread_list_clean |> 
+  filter(short_id %in% completed$short_id)
+
 ```
 
 
 ```{r, echo = FALSE, results = 'asis'}
-for(au in 1:nrow(completed)){
-  cat(paste0("# ", completed$short_id[au]))
+for(au in 1:nrow(to_show)){
+  cat(paste0("# ", to_show$title[au], " (", to_show$short_id[au], ")"))
   cat("\n\n\n```
       ")
-  print(write_html(completed$short_id[au]))
+  print(write_html(to_show$short_id[au]))
   cat("```")
   cat("\n\n\n")
 }
