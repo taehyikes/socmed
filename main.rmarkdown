@@ -4,9 +4,11 @@ format: html
 editor: visual
 ---
 
+
 # 0. Set up
 
 These are the R libraries we need
+
 
 ```{r, message = FALSE}
 library(tidyverse) # main functions
@@ -14,6 +16,7 @@ library(rtweet) # access Twitter API
 library(readr) # reading in files
 library(janitor) # cleans up datasets
 ```
+
 
 # 1. List tweets
 
@@ -33,14 +36,17 @@ This list was created by hand. The Google Sheet used has 7 columns:
 
 -   Added by (optional, just to track who contributed)
 
+
 ```{r, message = F}
 thread_list_raw <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vT7N5QJlcEY09a_5onomH6ZW38Nb_vb9pGBjEghJFXSnPzRjF2Dz1qx7l4iSFcPTFcCA0VWAyF36xlk/pub?gid=0&single=true&output=csv")
 
 ```
 
+
 # 2. Retrieve Tweets
 
 Which ones have already been done? Which are left to do?
+
 
 ```{r}
 # Checks which files already have an .RDS file created
@@ -54,9 +60,11 @@ to_do <- thread_list_raw |>
   
 ```
 
+
 ## Access the API
 
 A Twitter Developer account is needed to do this
+
 
 ```{r, eval = FALSE}
 # Authentication for rtweet not shown as keys are private
@@ -162,12 +170,15 @@ for(i in 1:nrow(to_do)){
 
 ```
 
+
 # 3. Push to GitHub
 
 Can be done in the terminal
+
 
 ```{bash}
 git add -A
 git commit -m "Latest update"
 git push
 ```
+
