@@ -41,7 +41,7 @@ n_photos <- all_data |>
 
 ```
 
-Together, we archived `r length(unique(all_data$short_id))` AUs. This covered `r n_tweets` tweets with `r n_photos` individual image files.
+We archived `r length(unique(all_data$short_id))` AUs, composed of `r n_tweets` tweets with `r n_photos` individual image files!
 
 ```{r, echo = F}
 # Images per AU
@@ -58,7 +58,7 @@ all_data |>
   theme_minimal() +
   xlab("AU") +
   ylab("Number of images") +
-  ggtitle("The great @taehyikes twitter archive caper") +
+  ggtitle("The great @taehyikes Twitter archive caper") +
   theme(plot.title.position = "plot")
   
   
