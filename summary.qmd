@@ -1,0 +1,65 @@
+---
+title: "A little summary"
+format: html
+editor: visual
+---
+
+```{r, echo=F, warning=F, message=F}
+library(tidyverse) # main functions
+library(rtweet) # access Twitter API
+library(readr) # reading in files
+library(janitor) # cleans up datasets
+
+thread_list_clean <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vT7N5QJlcEY09a_5onomH6ZW38Nb_vb9pGBjEghJFXSnPzRjF2Dz1qx7l4iSFcPTFcCA0VWAyF36xlk/pub?gid=0&single=true&output=csv") |> 
+  clean_names()
+
+tbl_fread <- 
+    list.files(pattern = "*.csv") %>% 
+    map_df(~fread(.))
+
+all_data <- list.files(pattern = ".rds")[which(!(list.files(pattern = ".rds") %in% c("wonderwall.rds", "goldilocks.rds")))] |> 
+  map_dfr(~readRDS(.)) |> 
+  left_join(thread_list_clean, by = "short_id")
+
+
+```
+
+```{r, echo = F}
+# Number of fics
+#length(unique(all_data$short_id))
+
+# Number of tweets
+n_tweets <- all_data |> 
+  count(short_id, post_id) |> 
+  nrow()
+
+# Number of tweets
+n_photos <- all_data |> 
+  filter(!is.na(media_url_https)) |> 
+  count(short_id, post_id, photo_id) |> 
+  nrow()
+
+```
+
+Together, we archived `r length(unique(all_data$short_id))` AUs. This covered `r n_tweets` tweets with `r n_photos` individual image files.
+
+```{r, echo = F}
+# Images per AU
+
+all_data |> 
+  filter(!is.na(media_url_https)) |> 
+  group_by(title.y) |> 
+  summarise(n = n()) |> 
+  mutate(title.y = if_else(str_detect(title.y, "my first au"), "my first au", title.y)) |> 
+  mutate(title.y = fct_reorder(title.y, n)) |> 
+  ggplot(aes(x = title.y, y= n)) +
+  geom_bar(stat="identity", fill = "#9575cd") +
+  coord_flip() +
+  theme_minimal() +
+  xlab("AU") +
+  ylab("Number of images") +
+  ggtitle("The great @taehyikes twitter archive caper") +
+  theme(plot.title.position = "plot")
+  
+  
+```
